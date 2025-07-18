@@ -25,6 +25,17 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
     --radius: 0.75rem;
+    
+    /* Cosmic Sunset Gradient Colors */
+    --cosmic-black: 0 0% 0%;
+    --cosmic-navy: 220 100% 8%;
+    --cosmic-dark-blue: 220 100% 15%;
+    --cosmic-blue: 195 100% 40%;
+    --cosmic-cyan: 180 100% 70%;
+    --cosmic-light-blue: 180 100% 85%;
+    --cosmic-yellow: 45 100% 70%;
+    --cosmic-orange: 25 100% 65%;
+    --cosmic-warm-orange: 15 100% 60%;
   }
 
   .light {
@@ -56,28 +67,279 @@
   }
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    background: radial-gradient(ellipse at top, #0A0A0A 0%, #000000 100%);
+    background: linear-gradient(
+      180deg,
+      hsl(var(--cosmic-black)) 0%,
+      hsl(var(--cosmic-navy)) 20%,
+      hsl(var(--cosmic-dark-blue)) 40%,
+      hsl(var(--cosmic-blue)) 60%,
+      hsl(var(--cosmic-cyan)) 75%,
+      hsl(var(--cosmic-yellow)) 85%,
+      hsl(var(--cosmic-orange)) 95%,
+      hsl(var(--cosmic-warm-orange)) 100%
+    );
+    background-attachment: fixed;
     min-height: 100vh;
   }
 }
 
 @layer components {
+  .cosmic-gradient-bg {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--cosmic-black)) 0%,
+      hsl(var(--cosmic-navy)) 25%,
+      hsl(var(--cosmic-dark-blue)) 50%,
+      hsl(var(--cosmic-blue)) 75%,
+      hsl(var(--cosmic-cyan)) 100%
+    );
+  }
+  
+  .cosmic-gradient-reverse {
+    background: linear-gradient(
+      45deg,
+      hsl(var(--cosmic-warm-orange)) 0%,
+      hsl(var(--cosmic-orange)) 25%,
+      hsl(var(--cosmic-yellow)) 50%,
+      hsl(var(--cosmic-cyan)) 75%,
+      hsl(var(--cosmic-blue)) 100%
+    );
+  }
+  
   .glass-effect {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+    @apply backdrop-blur-xl border;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    border: 1px solid;
+    border-image: linear-gradient(
+      135deg,
+      hsl(var(--cosmic-cyan) / 0.3) 0%,
+      hsl(var(--cosmic-blue) / 0.2) 50%,
+      hsl(var(--cosmic-orange) / 0.3) 100%
+    ) 1;
+  }
+  
+  .glass-effect-warm {
+    @apply backdrop-blur-xl border;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 165, 0, 0.1) 0%,
+      rgba(255, 140, 0, 0.05) 100%
+    );
+    border: 1px solid;
+    border-image: linear-gradient(
+      135deg,
+      hsl(var(--cosmic-orange) / 0.4) 0%,
+      hsl(var(--cosmic-yellow) / 0.3) 50%,
+      hsl(var(--cosmic-cyan) / 0.2) 100%
+    ) 1;
   }
   
   .glow-effect {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 
+      0 0 20px hsl(var(--cosmic-cyan) / 0.3),
+      0 0 40px hsl(var(--cosmic-blue) / 0.2),
+      0 0 60px hsl(var(--cosmic-orange) / 0.1);
+  }
+  
+  .glow-effect-warm {
+    box-shadow: 
+      0 0 20px hsl(var(--cosmic-orange) / 0.4),
+      0 0 40px hsl(var(--cosmic-yellow) / 0.3),
+      0 0 60px hsl(var(--cosmic-cyan) / 0.2);
   }
   
   .chat-gradient {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: linear-gradient(
+      135deg,
+      hsl(var(--cosmic-navy)) 0%,
+      hsl(var(--cosmic-dark-blue)) 100%
+    );
+  }
+  
+  .user-bubble {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--cosmic-blue)) 0%,
+      hsl(var(--cosmic-cyan)) 100%
+    );
+    border: 1px solid hsl(var(--cosmic-cyan) / 0.3);
+    backdrop-filter: blur(8px);
+  }
+  
+  .ai-bubble {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--cosmic-orange)) 0%,
+      hsl(var(--cosmic-yellow)) 100%
+    );
+    color: #1a1a1a; /* Dark color for better contrast */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    border: 1px solid hsl(var(--cosmic-orange) / 0.3);
+    backdrop-filter: blur(8px);
   }
   
   .premium-glow {
-    background: linear-gradient(45deg, #fbbf24, #f59e0b);
+    background: linear-gradient(45deg, 
+      hsl(var(--cosmic-cyan)), 
+      hsl(var(--cosmic-blue)),
+      hsl(var(--cosmic-orange))
+    );
     background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    animation: gradient-shift 3s ease-in-out infinite;
+    filter: brightness(1.2) contrast(1.1);
+  }
+  
+  .button-cosmic {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--cosmic-blue)) 0%,
+      hsl(var(--cosmic-cyan)) 50%,
+      hsl(var(--cosmic-orange)) 100%
+    );
+    color: #ffffff;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .button-cosmic:hover {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--cosmic-cyan)) 0%,
+      hsl(var(--cosmic-blue)) 50%,
+      hsl(var(--cosmic-orange)) 100%
+    );
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 
+      0 10px 25px hsl(var(--cosmic-orange) / 0.3),
+      0 0 30px hsl(var(--cosmic-cyan) / 0.2);
+  }
+  
+  .cosmic-aurora {
+    background: linear-gradient(
+      45deg,
+      hsl(var(--cosmic-black)) 0%,
+      hsl(var(--cosmic-navy)) 15%,
+      hsl(var(--cosmic-blue)) 30%,
+      hsl(var(--cosmic-cyan)) 45%,
+      hsl(var(--cosmic-yellow) / 0.8) 60%,
+      hsl(var(--cosmic-orange) / 0.7) 75%,
+      hsl(var(--cosmic-warm-orange) / 0.6) 90%,
+      hsl(var(--cosmic-black)) 100%
+    );
+    background-size: 400% 400%;
+    animation: aurora-flow 10s ease-in-out infinite;
+  }
+  
+  /* Ensure text remains readable over aurora background */
+  .cosmic-aurora * {
+    position: relative;
+    z-index: 10;
+  }
+  
+  .cosmic-aurora::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.2) 0%,
+      rgba(0, 0, 0, 0.4) 50%,
+      rgba(0, 0, 0, 0.6) 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  @keyframes gradient-shift {
+    0%, 100% { filter: hue-rotate(0deg); }
+    50% { filter: hue-rotate(20deg); }
+  }
+  
+  @keyframes aurora-flow {
+    0%, 100% { background-position: 0% 50%; }
+    25% { background-position: 100% 25%; }
+    50% { background-position: 100% 75%; }
+    75% { background-position: 0% 75%; }
+  }
+  
+  .cosmic-text {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--cosmic-cyan)) 0%,
+      hsl(var(--cosmic-light-blue)) 35%,
+      hsl(var(--cosmic-blue)) 70%,
+      hsl(var(--cosmic-cyan)) 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: brightness(1.3) contrast(1.2);
+  }
+  
+  .cosmic-text-readable {
+    color: hsl(var(--cosmic-cyan));
+    font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+  
+  .text-high-contrast {
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    font-weight: 600;
+  }
+}
+
+/* High contrast accessibility improvements */
+@media (prefers-contrast: high) {
+  .glass-effect {
+    background: rgba(0, 0, 0, 0.9);
+    border: 2px solid hsl(var(--cosmic-cyan));
+  }
+  
+  .user-bubble {
+    background: hsl(var(--cosmic-cyan)) !important;
+    color: #000000 !important;
+    text-shadow: none !important;
+  }
+  
+  .ai-bubble {
+    background: #ffffff !important;
+    color: #000000 !important;
+    text-shadow: none !important;
+    border: 2px solid hsl(var(--cosmic-orange));
+  }
+  
+  .cosmic-text {
+    -webkit-text-fill-color: hsl(var(--cosmic-cyan)) !important;
+    filter: none !important;
+  }
+  
+  .premium-glow {
+    -webkit-text-fill-color: hsl(var(--cosmic-cyan)) !important;
+    filter: none !important;
+  }
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .glass-effect {
+    backdrop-filter: blur(10px);
+  }
+  
+  .glow-effect {
+    box-shadow: 
+      0 0 10px hsl(var(--cosmic-cyan) / 0.2),
+      0 0 20px hsl(var(--cosmic-blue) / 0.1);
   }
 }

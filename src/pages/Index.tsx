@@ -1,14 +1,49 @@
 
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { motion, Variants } from 'framer-motion';
 import { MessageSquare, Sparkles, Target, TrendingUp, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
+import ReactGA from 'react-ga4';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabaseClient';
+
 
 const Index = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const { toast } = useToast();
 
-  const containerVariants = {
+  useEffect(() => {
+    ReactGA.send({ hitType: "pageview", page: window.location.pathname });
+  }, []);
+
+  const handleWaitlistSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!email) return;
+
+    // The 'waitlist' table needs a single 'email' column.
+    // RLS policy should be enabled to allow public inserts.
+    const { error } = await supabase.from('waitlist').insert({ email });
+
+    if (error) {
+      toast({
+        title: 'Error joining waitlist',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Successfully joined waitlist!',
+        description: 'We will notify you when we launch.',
+      });
+      setEmail('');
+    }
+  };
+
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -19,7 +54,7 @@ const Index = () => {
     },
   };
 
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
       opacity: 1,
@@ -38,6 +73,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white overflow-hidden">
+      <Helmet>
+        <title>HabitForge AI - Your Personal AI Habit Coach</title>
+        <meta name="description" content="Build lasting habits with an adaptive AI coach that provides personalized plans, tracks your progress, and keeps you motivated." />
+        <meta name="keywords" content="habit tracker, ai coach, personal development, self improvement, productivity" />
+      </Helmet>
       {/* Navigation */}
       <motion.nav 
         className="relative z-10 flex justify-between items-center p-6 glass-effect"
@@ -85,6 +125,29 @@ const Index = () => {
             <br />
             tracks your progress, and keeps you motivated every day.
           </motion.p>
+
+          {/* Waitlist Form */}
+          <motion.div 
+            className="max-w-md mx-auto mb-12"
+            variants={itemVariants}
+          >
+            <form onSubmit={handleWaitlistSubmit} className="flex flex-col sm:flex-row gap-2">
+              <Input
+                type="email"
+                placeholder="Enter your email to join the waitlist"
+                className="flex-grow bg-white/10 border-white/20 placeholder-gray-400 focus:ring-blue-500"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+              <Button
+                type="submit"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold glow-effect transition-all duration-300 transform hover:scale-105"
+              >
+                Join Waitlist
+              </Button>
+            </form>
+          </motion.div>
 
           {/* Demo Chat */}
           <motion.div 

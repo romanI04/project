@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { signIn, signUp } from '@/lib/supabaseClient';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -20,14 +21,11 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      // Simulate auth - in real app, use Supabase auth
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { error } = isLogin ? await signIn(email, password) : await signUp(email, password);
       
-      // Store mock session
-      localStorage.setItem('habitforge_session', JSON.stringify({
-        user: { id: '1', email },
-        expires: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
-      }));
+      if (error) {
+        throw error;
+      }
 
       toast({
         title: isLogin ? 'Welcome back!' : 'Account created!',
@@ -35,10 +33,10 @@ const Auth = () => {
       });
 
       setTimeout(() => navigate('/dashboard'), 1000);
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description: error.message || 'Something went wrong. Please try again.',
         variant: 'destructive',
       });
     } finally {

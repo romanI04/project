@@ -1,16 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, MessageSquare, Clock, Trash2 } from 'lucide-react';
+import { Search, MessageSquare, Clock, Trash2, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useSession } from '@/hooks/use-session';
+import { getChats, subscribeToChats } from '@/lib/supabaseClient';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useDebounce } from '@/hooks/use-debounce';
 
-interface ChatHistoryItem {
+interface Chat {
   id: string;
   title: string;
   preview: string;
-  timestamp: Date;
-  messageCount: number;
+  timestamp: string;
+  message_count: number;
 }
 
 interface ChatHistoryProps {
@@ -25,49 +29,68 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
   onNewChat
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [chats, setChats] = useState<ChatHistoryItem[]>([]);
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+  const { session } = useSession();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    // Load chat history from localStorage (simulating Supabase)
-    const mockChats: ChatHistoryItem[] = [
-      {
-        id: '1',
-        title: 'Daily Exercise Routine',
-        preview: 'Help me build a consistent exercise habit...',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-        messageCount: 12,
-      },
-      {
-        id: '2',
-        title: 'Reading Before Bed',
-        preview: 'I want to read 20 minutes every night...',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-        messageCount: 8,
-      },
-      {
-        id: '3',
-        title: 'Morning Meditation',
-        preview: 'Starting a meditation practice...',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3), // 3 days ago
-        messageCount: 15,
-      },
-      {
-        id: '4',
-        title: 'Healthy Eating',
-        preview: 'Need help with meal planning and nutrition...',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7), // 1 week ago
-        messageCount: 6,
-      },
-    ];
-    setChats(mockChats);
-  }, []);
+  const handleSelectChat = (chatId: string) => {
+    // DEBUG: Log chat selection
+    console.log(`[ChatHistory] Selected chat with ID: ${chatId}. Passing to parent.`);
+    onSelectChat(chatId);
+  };
 
-  const filteredChats = chats.filter(chat =>
-    chat.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    chat.preview.toLowerCase().includes(searchQuery.toLowerCase())
+  const { data: chats = [], isLoading } = useQuery<Chat[]>(
+    {
+      queryKey: ['chats', session?.user?.id],
+      queryFn: async () => {
+        // DEBUG: Check for session before fetching chats
+        if (!session?.user?.id) {
+          console.log('[ChatHistory] No user session found. Skipping chat fetch.');
+          return [];
+        }
+        
+        try {
+          // DEBUG: Fetching chats for user
+          console.log(`[ChatHistory] Fetching chats for user: ${session.user.id}`);
+          const { data, error } = await getChats(session.user.id);
+          
+          if (error) {
+            // DEBUG: Log Supabase fetch error
+            console.error('[ChatHistory] Error fetching chats from Supabase:', error);
+            throw new Error(error.message);
+          }
+          
+          // DEBUG: Log successful chat fetch
+          console.log('[ChatHistory] Successfully fetched chats:', data);
+          return data || [];
+        } catch (error) {
+          console.error('[ChatHistory] An unexpected error occurred during chat fetch:', error);
+          return []; // Return empty array on error to prevent breaking the UI
+        }
+      },
+      enabled: !!session?.user?.id,
+    }
   );
 
-  const formatTimestamp = (date: Date) => {
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    const subscription = subscribeToChats(session.user.id, () => {
+      queryClient.invalidateQueries({ queryKey: ['chats', session.user.id]});
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [session?.user?.id, queryClient]);
+
+  const filteredChats = chats.filter(chat =>
+    chat.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+    chat.preview.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+  ).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+  const formatTimestamp = (dateString: string) => {
+    const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
     
@@ -79,19 +102,22 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
 
   return (
     <motion.div 
-      className="h-full glass-effect flex flex-col"
+      className="h-full glass-effect flex flex-col relative overflow-hidden"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.5 }}
     >
+      {/* Cosmic gradient overlay */}
+      <div className="absolute inset-0 cosmic-gradient-bg opacity-10 pointer-events-none" />
+      
       {/* Header */}
-      <div className="p-6 border-b border-gray-700">
+      <div className="p-6 border-b border-cosmic-cyan/20 relative z-10">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Chat History</h2>
+          <h2 className="text-lg font-semibold cosmic-text">Chat History</h2>
           <Button
             onClick={onNewChat}
             size="sm"
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="button-cosmic text-white font-medium"
           >
             New
           </Button>
@@ -99,66 +125,75 @@ const ChatHistory: React.FC<ChatHistoryProps> = ({
         
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-3 w-4 h-4 text-cosmic-cyan/70" />
           <Input
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-gray-800/50 border-gray-600 focus:border-blue-500 text-white"
+            className="pl-10 glass-effect border-cosmic-cyan/30 focus:border-cosmic-orange text-white placeholder-cosmic-cyan/50 bg-cosmic-navy/20"
           />
         </div>
       </div>
 
       {/* Chat List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        <AnimatePresence>
-          {filteredChats.map((chat, index) => (
-            <motion.div
-              key={chat.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-              className={`p-4 rounded-xl cursor-pointer transition-all duration-300 group hover:scale-[1.02] ${
-                currentChat === chat.id
-                  ? 'bg-blue-600/20 border border-blue-500/50 glow-effect'
-                  : 'bg-gray-800/30 hover:bg-gray-700/50 border border-gray-700/50'
-              }`}
-              onClick={() => onSelectChat(chat.id)}
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  <MessageSquare className="w-4 h-4 text-blue-400" />
-                  <h3 className="font-medium text-sm truncate flex-1">{chat.title}</h3>
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 relative z-10">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-full">
+            <Loader2 className="w-8 h-8 animate-spin text-cosmic-cyan animate-cosmic-glow" />
+          </div>
+        ) : (
+          <AnimatePresence>
+            {filteredChats.map((chat, index) => (
+              <motion.div
+                key={chat.id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                className={`p-4 rounded-xl cursor-pointer transition-all duration-300 group hover:scale-[1.02] border ${
+                  currentChat === chat.id
+                    ? 'glass-effect-warm border-cosmic-orange/50 glow-effect-warm'
+                    : 'glass-effect border-cosmic-cyan/20 hover:border-cosmic-blue/40 hover:glow-effect'
+                }`}
+                onClick={() => handleSelectChat(chat.id)}
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <MessageSquare className={`w-4 h-4 ${currentChat === chat.id ? 'text-cosmic-orange' : 'text-cosmic-cyan'}`} />
+                    <h3 className="font-medium text-sm truncate flex-1 text-white">{chat.title}</h3>
+                  </div>
+                  <button className="opacity-0 group-hover:opacity-100 transition-opacity text-cosmic-cyan/60 hover:text-cosmic-orange">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
                 </div>
-                <button className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-400">
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
-              
-              <p className="text-xs text-gray-400 mb-3 line-clamp-2">
-                {chat.preview}
-              </p>
-              
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <div className="flex items-center space-x-1">
-                  <Clock className="w-3 h-3" />
-                  <span>{formatTimestamp(chat.timestamp)}</span>
+                
+                <p className="text-xs text-cosmic-cyan/70 mb-3 line-clamp-2">
+                  {chat.preview}
+                </p>
+                
+                <div className="flex items-center justify-between text-xs text-cosmic-cyan/50">
+                  <div className="flex items-center space-x-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{formatTimestamp(chat.timestamp)}</span>
+                  </div>
+                  <span className="text-cosmic-orange/70">{chat.message_count} messages</span>
                 </div>
-                <span>{chat.messageCount} messages</span>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
         
-        {filteredChats.length === 0 && (
+        {filteredChats.length === 0 && !isLoading && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-8 text-gray-400"
+            className="text-center py-8 px-4 text-cosmic-cyan/60"
           >
-            <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>No conversations found</p>
+            <MessageSquare className="w-10 h-10 mx-auto mb-4 opacity-50" />
+            <h3 className="font-semibold text-white mb-1">No Conversations Yet</h3>
+            <p className="text-sm">Click 'New Chat' to start your first conversation with HabitForge AI.</p>
           </motion.div>
         )}
       </div>

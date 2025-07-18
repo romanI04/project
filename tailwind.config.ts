@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
 
 export default {
 	darkMode: ["class"],
@@ -61,6 +62,17 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				cosmic: {
+					black: 'hsl(var(--cosmic-black))',
+					navy: 'hsl(var(--cosmic-navy))',
+					'dark-blue': 'hsl(var(--cosmic-dark-blue))',
+					blue: 'hsl(var(--cosmic-blue))',
+					cyan: 'hsl(var(--cosmic-cyan))',
+					'light-blue': 'hsl(var(--cosmic-light-blue))',
+					yellow: 'hsl(var(--cosmic-yellow))',
+					orange: 'hsl(var(--cosmic-orange))',
+					'warm-orange': 'hsl(var(--cosmic-warm-orange))'
 				}
 			},
 			borderRadius: {
@@ -84,13 +96,31 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'cosmic-glow': {
+					'0%, 100%': {
+						boxShadow: '0 0 20px hsl(var(--cosmic-cyan) / 0.3), 0 0 40px hsl(var(--cosmic-blue) / 0.2)'
+					},
+					'50%': {
+						boxShadow: '0 0 30px hsl(var(--cosmic-orange) / 0.4), 0 0 60px hsl(var(--cosmic-yellow) / 0.3)'
+					}
+				},
+				'aurora-pulse': {
+					'0%, 100%': {
+						opacity: '0.98'
+					},
+					'50%': {
+						opacity: '1'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'cosmic-glow': 'cosmic-glow 4s ease-in-out infinite',
+				'aurora-pulse': 'aurora-pulse 3s ease-in-out infinite'
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [animate],
 } satisfies Config;
